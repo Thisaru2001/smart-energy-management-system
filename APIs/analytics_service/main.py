@@ -128,7 +128,7 @@ def poll_and_store():
             try:
                 raw = RawReading(
                     id=str(uuid.uuid4()),
-                    meter_id=reading["meterId"],      # keeps whatever the simulator sends (SM001)
+                    meter_id=reading["meterId"],    
                     timestamp=datetime.fromisoformat(reading["timestamp"]),
                     voltage=reading["voltage"],
                     current=reading["current"],
@@ -146,16 +146,16 @@ def poll_and_store():
                 db.close()
         time.sleep(POLL_INTERVAL)
 
-# ===================== AGGREGATION JOBS (using SM-001) =====================
+# ===================== AGGREGATION =====================
 def compute_hourly_aggregate(start: datetime, end: datetime):
     db = SessionLocal()
     try:
-        # Delete any existing aggregate for this hour (idempotent)
+        
         db.execute(
             text("DELETE FROM hourly_aggregates WHERE meter_id = :m AND hour_start = :s"),
             {"m": "SM-001", "s": start}
         )
-        # Calculate total energy as sum of power * (1/3600) h / 1000 = kWh
+        
         result = db.execute(
             text("""
                 SELECT
@@ -353,7 +353,7 @@ def startup():
     threading.Thread(target=daily_aggregation_job, daemon=True).start()
     threading.Thread(target=cleanup_raw_data, daemon=True).start()
 
-# ===================== DASHBOARD ENDPOINTS (all use SM-001) =====================
+# ===================== DASHBOARD ENDPOINTS=====================
 @app.get("/dashboard/stats")
 def dashboard_stats(db: Session = Depends(get_db), current_user: dict = Depends(get_current_user)):
     today = datetime.utcnow().date()
