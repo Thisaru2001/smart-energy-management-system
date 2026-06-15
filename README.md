@@ -1,4 +1,4 @@
-# SmartEnergy – Intelligent Energy Management System
+# Smart Energy Management System
 
 Microservices platform for real‑time energy monitoring, analytics, billing, and smart device management.  
 Built with **FastAPI**, **MySQL**, **JWT**, and **Chart.js**.
