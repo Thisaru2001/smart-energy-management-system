@@ -2,7 +2,7 @@ import os
 import httpx
 from fastapi import FastAPI, Request, HTTPException
 from fastapi.responses import Response
-from fastapi.middleware.cors import CORSMiddleware   # <-- added
+from fastapi.middleware.cors import CORSMiddleware 
 from jose import jwt, JWTError
 from dotenv import load_dotenv
 
@@ -21,7 +21,7 @@ SERVICE_MAP = {
     "notification": os.getenv("NOTIFICATION_SERVICE_URL", "http://127.0.0.1:2006"),
 }
 
-# Public routes that never need a token
+
 PUBLIC_ROUTES = {
     # User auth (POST)
     ("POST", "/register"),
@@ -48,7 +48,7 @@ app.add_middleware(
         "http://127.0.0.1:5501",
         "http://localhost:5501",
         "http://localhost:3000",
-        # add any other origin your frontend uses
+        
     ],
     allow_credentials=True,
     allow_methods=["*"],
@@ -116,17 +116,17 @@ async def gateway(request: Request, path: str):
     if request.method == "OPTIONS":
         return Response(status_code=200)
 
-    # 1. Extract the service name (first path segment)
+    
     parts = path.split("/")
     service_name = parts[0] if parts else ""
 
     if service_name not in SERVICE_MAP:
         raise HTTPException(status_code=404, detail="Service not found")
 
-    # 2. Reconstruct the path **without** the service prefix
+    
     actual_path = "/" + "/".join(parts[1:]) if len(parts) > 1 else "/"
 
-    # 3. Authentication – skip for public routes
+    
     is_public = (request.method, actual_path) in PUBLIC_ROUTES
     if not is_public:
         auth_header = request.headers.get("Authorization")
@@ -135,6 +135,6 @@ async def gateway(request: Request, path: str):
         token = auth_header.split(" ")[1]
         verify_token(token)
 
-    # 4. Forward to the correct backend service
+    
     target_url = SERVICE_MAP[service_name]
     return await forward_request_with_path(target_url, actual_path, request)
