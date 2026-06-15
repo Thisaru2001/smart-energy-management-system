@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartEnergy – Energy Manager</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f6f9f7;
+      color: #0f2b1a;
+      min-height: 100vh;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(34, 197, 94, 0.06);
+      border: 1px solid rgba(34, 197, 94, 0.06);
+    }
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0f2b1a;
+    }
+    .badge-active {
+      background: rgba(34, 197, 94, 0.1);
+      color: #16a34a;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-inactive {
+      background: rgba(239, 68, 68, 0.1);
+      color: #b91c1c;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body class="p-6">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-bold text-[#0f2b1a]">Energy Manager Dashboard</h1>
+        <p id="currentDate" class="text-xs text-[#2d4a3a] opacity-60"></p>
+      </div>
+      <div class="flex items-center gap-4">
+        <span id="userName" class="text-sm font-medium text-[#2d4a3a]"></span>
+        <a href="home_user.html" class="text-sm text-[#22c55e] hover:text-[#16a34a] font-medium">← Home</a>
+        <button id="logoutBtn" class="text-sm text-red-500 hover:text-red-600 font-medium">Logout</button>
+      </div>
+    </div>
+
+    <!-- Top Stats -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="card">
+        <p class="text-xs text-[#2d4a3a] opacity-70">Total Users</p>
+        <p id="totalUsers" class="stat-value">0</p>
+      </div>
+      <div class="card">
+        <p class="text-xs text-[#2d4a3a] opacity-70">Total Meters</p>
+        <p id="totalMeters" class="stat-value">0</p>
+      </div>
+      <div class="card">
+        <p class="text-xs text-[#2d4a3a] opacity-70">Today's Usage (SM-001)</p>
+        <p id="todayUsage" class="stat-value">0.0 kWh</p>
+      </div>
+      <div class="card">
+        <p class="text-xs text-[#2d4a3a] opacity-70">Carbon Saved</p>
+        <p id="carbonSaved" class="stat-value">0.0 kg</p>
+      </div>
+    </div>
+
+    <!-- Chart + Devices -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+      <div class="card lg:col-span-2">
+        <h3 class="font-bold text-[#0f2b1a] mb-4">Energy Consumption (SM-001)</h3>
+        <div class="h-52 sm:h-64">
+          <canvas id="energyChart"></canvas>
+        </div>
+        <div class="flex items-center justify-between mt-3 text-xs text-[#2d4a3a] opacity-50">
+          <span id="weekTotal">Total: 0.0 kWh this week</span>
+          <span id="forecastNextDay">Forecast next day: 0.0 kWh</span>
+        </div>
+      </div>
+
+      <!-- Connected Meters -->
+      <div class="card">
+        <h3 class="font-bold text-[#0f2b1a] mb-3">Connected Meters</h3>
+        <div id="metersList" class="space-y-2.5"></div>
+      </div>
+    </div>
+
+    <!-- Recent Activity & Tips -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div class="card lg:col-span-2">
+        <h3 class="font-bold text-[#0f2b1a] mb-4">Recent Activity</h3>
+        <div id="activityList" class="space-y-1"></div>
+      </div>
+      <div class="card">
+        <h3 class="font-bold text-[#0f2b1a] mb-4">Smart Tips</h3>
+        <div id="tipsList" class="space-y-4"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://localhost:2000";
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+    // Role check – only energy_manager or system_admin can view this page
+    if (user.role !== "energy_manager" && user.role !== "system_admin") {
+      alert("Access denied. This page requires Energy Manager privileges.");
+      window.location.href = "home_user.html";
+    }
+
+    if (!token) {
+      window.location.href = "index.html";
+    }
+
+    // Display user info
+    document.getElementById("userName").textContent = user.name || "Manager";
+    document.getElementById("currentDate").textContent = new Date().toLocaleDateString('en-US', {
+      month: 'long', day: 'numeric', year: 'numeric'
+    });
+
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      localStorage.clear();
+      window.location.href = "index.html";
+    });
+
+    async function fetchAPI(endpoint, options = {}) {
+      const resp = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+          ...options.headers
+        }
+      });
+      if (!resp.ok) {
+        if (resp.status === 401) {
+          alert("Session expired.");
+          localStorage.clear();
+          window.location.href = "index.html";
+        }
+        throw new Error(`API ${resp.status}`);
+      }
+      return resp.json();
+    }
+
+    // Load users count
+    async function loadUsers() {
+      try {
+        const users = await fetchAPI("/user/users");
+        document.getElementById("totalUsers").textContent = users.length;
+      } catch (e) {
+        document.getElementById("totalUsers").textContent = "N/A";
+      }
+    }
+
+    // Load meters and device list
+    async function loadMeters() {
+      try {
+        const devices = await fetchAPI("/device/devices");
+        document.getElementById("totalMeters").textContent = devices.length;
+        const list = document.getElementById("metersList");
+        list.innerHTML = devices.map(d => `
+          <div class="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
+            <div>
+              <p class="text-sm font-semibold">${d.meter_number || d.name}</p>
+              <p class="text-xs opacity-60">${d.location || ''}</p>
+            </div>
+            <span class="${d.active ? 'badge-active' : 'badge-inactive'}">${d.active ? 'Active' : 'Inactive'}</span>
+          </div>
+        `).join("");
+      } catch (e) {
+        document.getElementById("totalMeters").textContent = "N/A";
+      }
+    }
+
+    // Load analytics for SM-001 (fixed meter)
+    async function loadAnalytics() {
+      try {
+        const stats = await fetchAPI("/analytics/dashboard/stats");
+        document.getElementById("todayUsage").textContent = `${stats.today_usage_kwh.toFixed(1)} kWh`;
+        document.getElementById("carbonSaved").textContent = `${stats.carbon_saved_kg.toFixed(1)} kg`;
+
+        // Chart
+        const chartData = await fetchAPI("/analytics/dashboard/energy-chart");
+        const days = chartData.daily;
+        const labels = days.map(d => new Date(d.date).toLocaleDateString("en-US", { weekday: "short" }));
+        const values = days.map(d => d.energy_kwh);
+
+        const total = days.reduce((s, d) => s + d.energy_kwh, 0);
+        document.getElementById("weekTotal").textContent = `Total: ${total.toFixed(1)} kWh this week`;
+        if (chartData.forecast_next_day) {
+          document.getElementById("forecastNextDay").textContent = `Forecast next day: ${chartData.forecast_next_day.toFixed(1)} kWh`;
+        }
+
+        const ctx = document.getElementById("energyChart").getContext("2d");
+        // Destroy previous chart if exists
+        if (window.chartInstance) window.chartInstance.destroy();
+        window.chartInstance = new Chart(ctx, {
+          type: "line",
+          data: {
+            labels,
+            datasets: [{
+              label: "Energy (kWh)",
+              data: values,
+              borderColor: "#22c55e",
+              backgroundColor: "rgba(34, 197, 94, 0.1)",
+              borderWidth: 3,
+              tension: 0.4,
+              fill: true,
+              pointRadius: 5,
+              pointBackgroundColor: "#22c55e"
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+              y: { beginAtZero: true, grid: { color: "rgba(34, 197, 94, 0.08)" }, ticks: { callback: v => v + " kWh" } },
+              x: { grid: { display: false } }
+            }
+          }
+        });
+      } catch (e) {
+        console.error("Analytics error:", e);
+      }
+    }
+
+    // Load recent activity and tips
+    async function loadActivityAndTips() {
+      try {
+        const acts = await fetchAPI("/analytics/dashboard/activity");
+        document.getElementById("activityList").innerHTML = acts.slice(0,4).map(a => `
+          <div class="flex items-center gap-3 py-2 border-b border-gray-100 last:border-0">
+            <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center text-green-600 flex-shrink-0">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+            </div>
+            <div class="flex-1"><p class="text-sm font-medium">${a.message}</p></div>
+            <span class="text-xs opacity-50">${new Date(a.timestamp).toLocaleString()}</span>
+          </div>`).join("");
+      } catch (e) {}
+
+      try {
+        const tips = await fetchAPI("/analytics/dashboard/tips");
+        document.getElementById("tipsList").innerHTML = tips.map(t => `
+          <div class="bg-green-50 rounded-xl p-4 border border-green-100">
+            <p class="text-sm font-semibold">${t.title}</p>
+            <p class="text-xs opacity-70">${t.description}</p>
+          </div>`).join("");
+      } catch (e) {}
+    }
+
+    // Initial load
+    loadUsers();
+    loadMeters();
+    loadAnalytics();
+    loadActivityAndTips();
+
+    // Refresh every 60 seconds
+    setInterval(() => {
+      loadUsers();
+      loadMeters();
+      loadAnalytics();
+      loadActivityAndTips();
+    }, 60000);
+  </script>
+</body>
+</html>

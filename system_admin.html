@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartEnergy – System Admin</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f6f9f7;
+      color: #0f2b1a;
+      min-height: 100vh;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(34, 197, 94, 0.06);
+      border: 1px solid rgba(34, 197, 94, 0.06);
+    }
+    .stat-value {
+      font-size: 28px;
+      font-weight: 800;
+      color: #0f2b1a;
+    }
+    .badge-active {
+      background: rgba(34, 197, 94, 0.1);
+      color: #16a34a;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-inactive {
+      background: rgba(239, 68, 68, 0.1);
+      color: #b91c1c;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-pending {
+      background: rgba(234, 179, 8, 0.1);
+      color: #b45309;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-paid {
+      background: rgba(34, 197, 94, 0.1);
+      color: #16a34a;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge-overdue {
+      background: rgba(239, 68, 68, 0.1);
+      color: #b91c1c;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body class="p-6">
+  <div class="max-w-7xl mx-auto">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-2xl sm:text-3xl font-bold text-[#0f2b1a]">System Administrator</h1>
+        <p id="currentDate" class="text-xs text-[#2d4a3a] opacity-60"></p>
+      </div>
+      <div class="flex items-center gap-4">
+        <span id="userName" class="text-sm font-medium text-[#2d4a3a]"></span>
+        <a href="home_user.html" class="text-sm text-[#22c55e] hover:text-[#16a34a] font-medium">← Home</a>
+        <button id="logoutBtn" class="text-sm text-red-500 hover:text-red-600 font-medium">Logout</button>
+      </div>
+    </div>
+
+    <!-- Top Stats -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+      <div class="card">
+        <p class="text-xs text-[#2d4a3a] opacity-70">Total Users</p>
+        <p id="totalUsers" class="stat-value">0</p>
+      </div>
+      <div class="card">
+        <p class="text-xs text-[#2d4a3a] opacity-70">Total Meters</p>
+        <p id="totalMeters" class="stat-value">0</p>
+      </div>
+      <div class="card">
+        <p class="text-xs text-[#2d4a3a] opacity-70">Active Meters</p>
+        <p id="activeMeters" class="stat-value">0</p>
+      </div>
+      <div class="card">
+        <p class="text-xs text-[#2d4a3a] opacity-70">Pending Bills</p>
+        <p id="pendingBills" class="stat-value">0</p>
+      </div>
+    </div>
+
+    <!-- Users + Meters + Bills -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+      <!-- Users Table -->
+      <div class="card">
+        <h3 class="font-bold text-[#0f2b1a] mb-4">Users</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left border-b border-gray-100">
+                <th class="py-2 pr-2">Name</th>
+                <th class="py-2 pr-2">Email</th>
+                <th class="py-2 pr-2">Role</th>
+                <th class="py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody id="usersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Meters Table -->
+      <div class="card">
+        <h3 class="font-bold text-[#0f2b1a] mb-4">Meters / Devices</h3>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead>
+              <tr class="text-left border-b border-gray-100">
+                <th class="py-2 pr-2">Meter Number</th>
+                <th class="py-2 pr-2">Location</th>
+                <th class="py-2 pr-2">User ID</th>
+                <th class="py-2">Status</th>
+              </tr>
+            </thead>
+            <tbody id="metersTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bills Table -->
+    <div class="card mb-8">
+      <h3 class="font-bold text-[#0f2b1a] mb-4">Recent Bills</h3>
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-left border-b border-gray-100">
+              <th class="py-2 pr-2">Bill ID</th>
+              <th class="py-2 pr-2">User ID</th>
+              <th class="py-2 pr-2">Period</th>
+              <th class="py-2 pr-2">Amount</th>
+              <th class="py-2 pr-2">Due Date</th>
+              <th class="py-2">Status</th>
+            </tr>
+          </thead>
+          <tbody id="billsTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- System Health -->
+    <div class="card">
+      <h3 class="font-bold text-[#0f2b1a] mb-4">System Health</h3>
+      <div id="healthChecks" class="grid grid-cols-2 lg:grid-cols-6 gap-4"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = "http://localhost:2000";
+    const token = localStorage.getItem("token");
+    const user = JSON.parse(localStorage.getItem("user") || "{}");
+
+    // Role check – only system_admin can view this page
+    if (user.role !== "system_admin") {
+      alert("Access denied. This page requires System Admin privileges.");
+      window.location.href = "home_user.html";
+    }
+
+    if (!token) {
+      window.location.href = "index.html";
+    }
+
+    // Display user info
+    document.getElementById("userName").textContent = user.name || "Administrator";
+    document.getElementById("currentDate").textContent = new Date().toLocaleDateString('en-US', {
+      month: 'long', day: 'numeric', year: 'numeric'
+    });
+
+    // Logout
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      localStorage.clear();
+      window.location.href = "index.html";
+    });
+
+    async function fetchAPI(endpoint, options = {}) {
+      const resp = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+          ...options.headers
+        }
+      });
+      if (!resp.ok) {
+        if (resp.status === 401) {
+          alert("Session expired.");
+          localStorage.clear();
+          window.location.href = "index.html";
+        }
+        throw new Error(`API ${resp.status}`);
+      }
+      return resp.json();
+    }
+
+    // Load all data
+    async function loadDashboard() {
+      // Users
+      try {
+        const users = await fetchAPI("/user/users");
+        document.getElementById("totalUsers").textContent = users.length;
+        const tbody = document.getElementById("usersTableBody");
+        tbody.innerHTML = users.map(u => `
+          <tr class="border-b border-gray-50">
+            <td class="py-2 pr-2">${u.name}</td>
+            <td class="py-2 pr-2 text-xs">${u.email}</td>
+            <td class="py-2 pr-2">${u.role}</td>
+            <td class="py-2"><span class="${u.active ? 'badge-active' : 'badge-inactive'}">${u.active ? 'Active' : 'Inactive'}</span></td>
+          </tr>
+        `).join("");
+      } catch (e) { console.error(e); }
+
+      // Devices
+      try {
+        const devices = await fetchAPI("/device/devices");
+        document.getElementById("totalMeters").textContent = devices.length;
+        document.getElementById("activeMeters").textContent = devices.filter(d => d.active).length;
+        const tbody = document.getElementById("metersTableBody");
+        tbody.innerHTML = devices.map(d => `
+          <tr class="border-b border-gray-50">
+            <td class="py-2 pr-2">${d.meter_number || d.name}</td>
+            <td class="py-2 pr-2">${d.location || ''}</td>
+            <td class="py-2 pr-2 text-xs">${d.user_id || ''}</td>
+            <td class="py-2"><span class="${d.active ? 'badge-active' : 'badge-inactive'}">${d.active ? 'Active' : 'Inactive'}</span></td>
+          </tr>
+        `).join("");
+      } catch (e) { console.error(e); }
+
+      // Bills (we need an admin bills endpoint – assuming we fetch all bills as admin)
+      // For now, we can call /billing/bills for each user (but that's heavy)
+      // Instead, we'll use a placeholder. If you have a global bills endpoint, replace below.
+      // For demonstration, we'll show an empty state.
+      try {
+        // Attempt to get bills for the admin user (who may not have bills)
+        // A better approach: add a GET /billing/admin/bills endpoint in Billing Service
+        // We'll just display a message for now.
+        document.getElementById("pendingBills").textContent = "0";
+        document.getElementById("billsTableBody").innerHTML = `<tr><td colspan="6" class="py-4 text-center text-sm opacity-50">Bills overview requires an admin endpoint (see notes)</td></tr>`;
+      } catch (e) {}
+
+      // System Health
+      const services = [
+        { name: "User Service", url: `${API_BASE}/user/health` },
+        { name: "Device Service", url: `${API_BASE}/device/health` },
+        { name: "Energy Simulator", url: `${API_BASE}/energy/health` },
+        { name: "Analytics Service", url: `${API_BASE}/analytics/health` },
+        { name: "Billing Service", url: `${API_BASE}/billing/health` },
+        { name: "Notification Service", url: `${API_BASE}/notification/health` },
+      ];
+      const healthContainer = document.getElementById("healthChecks");
+      healthContainer.innerHTML = "";
+      for (const service of services) {
+        const status = await checkHealth(service.url);
+        healthContainer.innerHTML += `
+          <div class="flex items-center gap-2 p-3 rounded-xl bg-gray-50">
+            <span class="w-2 h-2 rounded-full ${status ? 'bg-green-500' : 'bg-red-500'}"></span>
+            <span class="text-sm font-medium">${service.name}</span>
+          </div>
+        `;
+      }
+    }
+
+    async function checkHealth(url) {
+      try {
+        const resp = await fetch(url, { headers: { "Authorization": `Bearer ${token}` } });
+        return resp.ok;
+      } catch (e) {
+        return false;
+      }
+    }
+
+    // Initial load
+    loadDashboard();
+
+    // Refresh every 60s
+    setInterval(loadDashboard, 60000);
+  </script>
+</body>
+</html>

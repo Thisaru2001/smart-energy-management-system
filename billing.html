@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartEnergy – Billing</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PayHere JS SDK -->
+  <script type="text/javascript" src="https://www.payhere.lk/lib/payhere.js"></script>
+  <style>
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #f6f9f7;
+      color: #0f2b1a;
+      min-height: 100vh;
+    }
+    .card {
+      background: #ffffff;
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 2px 12px rgba(34, 197, 94, 0.06);
+      border: 1px solid rgba(34, 197, 94, 0.06);
+    }
+    .btn-pay {
+      background: #22c55e;
+      color: white;
+      padding: 8px 20px;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 14px;
+      transition: all 0.2s;
+      cursor: pointer;
+      border: none;
+    }
+    .btn-pay:hover {
+      background: #16a34a;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+    }
+    .btn-pay:disabled {
+      background: #86efac;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .badge-status { font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; }
+    .badge-paid    { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
+    .badge-pending { background: rgba(234, 179, 8, 0.1); color: #b45309; }
+    .badge-overdue { background: rgba(239, 68, 68, 0.1); color: #b91c1c; }
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      padding: 12px 20px; border-radius: 12px;
+      font-size: 14px; font-weight: 600;
+      display: none; z-index: 999;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    }
+    #toast.error   { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+    #toast.success { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+  </style>
+</head>
+<body class="p-6">
+  <div class="max-w-3xl mx-auto">
+    <div class="flex items-center justify-between mb-8">
+      <h1 class="text-2xl sm:text-3xl font-bold text-[#0f2b1a]">Billing & Payments</h1>
+      <a href="home_user.html" class="text-sm text-[#22c55e] hover:text-[#16a34a] font-medium transition-colors">← Back to Dashboard</a>
+    </div>
+    <div id="billsContainer" class="space-y-4"></div>
+    <div id="loading" class="text-center text-sm text-[#2d4a3a] opacity-70 mt-8">Loading bills…</div>
+  </div>
+
+  <div id="toast"></div>
+
+  <script>
+    const API_BASE = "http://localhost:2000";
+    const token = localStorage.getItem("token");
+    if (!token) window.location.href = "index.html";
+
+    // ── Toast ──────────────────────────────────────────────────────────────────
+    function showToast(msg, type = "error") {
+      const t = document.getElementById("toast");
+      t.textContent = msg;
+      t.className = type;
+      t.style.display = "block";
+      setTimeout(() => { t.style.display = "none"; }, 5000);
+    }
+
+    // ── API helper ─────────────────────────────────────────────────────────────
+    async function fetchAPI(endpoint, options = {}) {
+      const resp = await fetch(`${API_BASE}${endpoint}`, {
+        ...options,
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json",
+          ...(options.headers || {})
+        }
+      });
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.detail || `API error ${resp.status}`);
+      }
+      return resp.json();
+    }
+
+    // ── PayHere SDK callbacks ──────────────────────────────────────────────────
+    payhere.onCompleted = function onCompleted(orderId) {
+      showToast("Payment completed! Refreshing…", "success");
+      setTimeout(() => loadBills(), 2000);
+    };
+    payhere.onDismissed = function onDismissed() {
+      showToast("Payment window closed.", "error");
+    };
+    payhere.onError = function onError(error) {
+      showToast("Payment error: " + error, "error");
+    };
+
+    // ── Pay handler — uses JS SDK ──────────────────────────────────────────────
+    async function handlePay(btn) {
+      const billId = btn.dataset.billId;
+      btn.disabled = true;
+      btn.textContent = "Loading…";
+
+      try {
+        // Backend returns payment details + hash (not a redirect URL)
+        const data = await fetchAPI(`/billing/bills/${billId}/pay`, { method: "POST" });
+
+        // Build PayHere payment object for JS SDK
+        const payment = {
+          sandbox:        true,                      // ← KEY: enables sandbox mode
+          merchant_id:    data.merchant_id,
+          return_url:     data.return_url,
+          cancel_url:     data.cancel_url,
+          notify_url:     data.notify_url,
+          order_id:       data.order_id,
+          items:          data.items,
+          amount:         data.amount,
+          currency:       data.currency,
+          hash:           data.hash,
+          first_name:     data.first_name,
+          last_name:      data.last_name,
+          email:          data.email,
+          phone:          data.phone,
+          address:        data.address,
+          city:           data.city,
+          country:        data.country,
+        };
+
+        payhere.startPayment(payment);  // opens PayHere popup
+
+      } catch (err) {
+        showToast("Payment error: " + err.message, "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Pay Now";
+      }
+    }
+
+    // ── Render bills ───────────────────────────────────────────────────────────
+    function renderBills(bills) {
+      const container = document.getElementById("billsContainer");
+      document.getElementById("loading").style.display = "none";
+
+      if (!bills.length) {
+        container.innerHTML = `<div class="card text-center text-sm text-[#2d4a3a] opacity-70">No bills found.</div>`;
+        return;
+      }
+
+      container.innerHTML = bills.map(b => {
+        const isOverdue = b.status === "pending" && new Date(b.due_date) < new Date();
+        const displayStatus = isOverdue ? "overdue" : b.status;
+        const statusClass = displayStatus === "paid" ? "badge-paid" : displayStatus === "overdue" ? "badge-overdue" : "badge-pending";
+        return `
+          <div class="card flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p class="text-lg font-semibold">${b.billing_period} Bill</p>
+              <p class="text-xs text-[#2d4a3a] opacity-60">Units: ${b.units_consumed.toFixed(1)} kWh &nbsp;·&nbsp; Due: ${b.due_date}</p>
+              <p class="text-xl font-bold mt-2">LKR ${b.amount.toFixed(2)}</p>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="badge-status ${statusClass}">${displayStatus}</span>
+              ${b.status !== "paid" ? `<button class="btn-pay" data-bill-id="${b.bill_id}">Pay Now</button>` : ""}
+            </div>
+          </div>`;
+      }).join("");
+
+      document.querySelectorAll(".btn-pay").forEach(btn => {
+        btn.addEventListener("click", () => handlePay(btn));
+      });
+    }
+
+    // ── Load bills ─────────────────────────────────────────────────────────────
+    async function loadBills() {
+      document.getElementById("loading").style.display = "block";
+      try {
+        const bills = await fetchAPI("/billing/bills");
+        renderBills(bills);
+      } catch (err) {
+        document.getElementById("billsContainer").innerHTML = `
+          <div class="card text-center text-red-500 text-sm">
+            Failed to load bills.<br><span class="text-xs opacity-60">${err.message}</span>
+          </div>`;
+        document.getElementById("loading").style.display = "none";
+      }
+    }
+
+    loadBills();
+  </script>
+</body>
+</html>

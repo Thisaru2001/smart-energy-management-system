@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmartEnergy Sri Lanka – Login & Register</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com">
+    </script>
+
+    <style>
+        /* ===== GLOBAL ===== */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: #f6f9f7;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+
+        /* ===== BACKGROUND NETWORK PATTERN ===== */
+        #network-bg {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            background:
+                radial-gradient(ellipse at 20% 50%, rgba(34, 197, 94, 0.06) 0%, transparent 60%),
+                radial-gradient(ellipse at 80% 30%, rgba(34, 197, 94, 0.04) 0%, transparent 50%),
+                #f6f9f7;
+            overflow: hidden;
+        }
+
+        #network-bg::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background-image:
+                linear-gradient(rgba(34, 197, 94, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(34, 197, 94, 0.05) 1px, transparent 1px);
+            background-size: 60px 60px;
+        }
+
+        /* ===== NETWORK NODES (SVG) ===== */
+        .node {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(34, 197, 94, 0.08);
+            border: 1px solid rgba(34, 197, 94, 0.12);
+            animation: pulseNode 4s ease-in-out infinite alternate;
+        }
+        .node-dot {
+            position: absolute;
+            border-radius: 50%;
+            background: #22c55e;
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.15);
+        }
+        .node-line {
+            position: absolute;
+            height: 1px;
+            background: linear-gradient(90deg, rgba(34, 197, 94, 0.05), rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05));
+            transform-origin: left center;
+        }
+
+        @keyframes pulseNode {
+            0% {
+                opacity: 0.3;
+                transform: scale(0.9);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1.1);
+            }
+        }
+
+        /* ===== STAT CARDS ===== */
+        .stat-card {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 2px 12px rgba(34, 197, 94, 0.08);
+            border: 1px solid rgba(34, 197, 94, 0.08);
+        }
+        .stat-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(34, 197, 94, 0.12);
+        }
+        .stat-card .number {
+            font-size: 28px;
+            font-weight: 800;
+            color: #0f2b1a;
+            letter-spacing: -0.5px;
+        }
+        .stat-card .label {
+            font-size: 13px;
+            color: #2d4a3a;
+            font-weight: 500;
+            opacity: 0.7;
+            margin-top: 2px;
+        }
+        .stat-card .icon {
+            color: #22c55e;
+            opacity: 0.6;
+            width: 28px;
+            height: 28px;
+        }
+
+        /* ===== GLASS AUTH CARD ===== */
+        .auth-card {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(34, 197, 94, 0.1);
+            border-radius: 20px;
+            box-shadow: 0 30px 60px -20px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+        }
+
+        /* ===== TABS ===== */
+        .tab-btn {
+            flex: 1;
+            padding: 12px 16px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            text-align: center;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            background: transparent;
+            color: rgba(15, 43, 26, 0.4);
+            border: none;
+            position: relative;
+            font-family: inherit;
+        }
+        .tab-btn.active {
+            background: rgba(34, 197, 94, 0.08);
+            color: #0f2b1a;
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.03);
+        }
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: 6px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 2px;
+            background: #22c55e;
+            border-radius: 2px;
+        }
+        .tab-btn:hover:not(.active) {
+            color: rgba(15, 43, 26, 0.7);
+        }
+
+        /* ===== INPUTS ===== */
+        .input-field {
+            width: 100%;
+            padding: 14px 16px 14px 46px;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid rgba(34, 197, 94, 0.12);
+            border-radius: 12px;
+            color: #0f2b1a;
+            font-size: 14px;
+            outline: none;
+            transition: all 0.3s ease;
+            font-family: inherit;
+        }
+        .input-field::placeholder {
+            color: rgba(15, 43, 26, 0.25);
+        }
+        .input-field:focus {
+            border-color: rgba(34, 197, 94, 0.3);
+            background: #ffffff;
+            box-shadow: 0 0 30px rgba(34, 197, 94, 0.06);
+        }
+
+        .input-icon {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: rgba(34, 197, 94, 0.4);
+            width: 20px;
+            height: 20px;
+            pointer-events: none;
+        }
+
+        /* ===== PRIMARY BUTTON ===== */
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            background: #22c55e;
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 15px;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: inherit;
+            box-shadow: 0 4px 20px rgba(34, 197, 94, 0.15);
+        }
+        .btn-primary:hover {
+            background: #16a34a;
+            transform: translateY(-1px);
+            box-shadow: 0 8px 30px rgba(34, 197, 94, 0.2);
+        }
+        .btn-primary:active {
+            transform: scale(0.98);
+        }
+
+        /* ===== SOCIAL BUTTONS ===== */
+        .btn-social {
+            flex: 1;
+            padding: 12px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.6);
+            border: 1px solid rgba(34, 197, 94, 0.08);
+            color: rgba(15, 43, 26, 0.6);
+            font-size: 13px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            font-family: inherit;
+        }
+        .btn-social:hover {
+            background: rgba(255, 255, 255, 0.9);
+            border-color: rgba(34, 197, 94, 0.15);
+            color: #0f2b1a;
+        }
+
+        /* ===== ANIMATIONS ===== */
+        .fade-in-up {
+            animation: fadeInUp 0.7s ease-out forwards;
+        }
+        .fade-in-up-delay {
+            animation: fadeInUp 0.7s ease-out 0.15s forwards;
+            opacity: 0;
+        }
+        .fade-in-up-delay-2 {
+            animation: fadeInUp 0.7s ease-out 0.3s forwards;
+            opacity: 0;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 1024px) {
+            .hero-stats {
+                grid-template-columns: 1fr 1fr;
+                gap: 12px;
+            }
+            .stat-card .number {
+                font-size: 24px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            body {
+                padding: 16px;
+                align-items: flex-start;
+                padding-top: 30px;
+            }
+            .hero-stats {
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+            }
+            .stat-card {
+                padding: 16px 18px;
+            }
+            .stat-card .number {
+                font-size: 20px;
+            }
+            .auth-card {
+                padding: 24px 20px !important;
+            }
+            .brand-title {
+                font-size: 32px !important;
+            }
+            .brand-sub {
+                font-size: 14px !important;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .hero-stats {
+                grid-template-columns: 1fr 1fr;
+                gap: 8px;
+            }
+            .stat-card {
+                padding: 12px 14px;
+            }
+            .stat-card .number {
+                font-size: 18px;
+            }
+            .stat-card .label {
+                font-size: 11px;
+            }
+            .stat-card .icon {
+                width: 20px;
+                height: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== BACKGROUND ===== -->
+    <div id="network-bg">
+        <!-- Decorative nodes -->
+        <div class="node" style="width:120px;height:120px;top:15%;left:10%;animation-delay:0s;"></div>
+        <div class="node" style="width:80px;height:80px;top:60%;left:75%;animation-delay:1.5s;"></div>
+        <div class="node" style="width:60px;height:60px;top:30%;left:85%;animation-delay:0.8s;"></div>
+        <div class="node" style="width:100px;height:100px;top:70%;left:15%;animation-delay:2.2s;"></div>
+        <div class="node" style="width:50px;height:50px;top:10%;left:60%;animation-delay:0.5s;"></div>
+
+        <!-- Small dots -->
+        <div class="node-dot" style="width:6px;height:6px;top:25%;left:30%;"></div>
+        <div class="node-dot" style="width:4px;height:4px;top:55%;left:80%;"></div>
+        <div class="node-dot" style="width:5px;height:5px;top:40%;left:50%;"></div>
+        <div class="node-dot" style="width:3px;height:3px;top:75%;left:40%;"></div>
+        <div class="node-dot" style="width:4px;height:4px;top:18%;left:70%;"></div>
+        <div class="node-dot" style="width:5px;height:5px;top:85%;left:60%;"></div>
+        <div class="node-dot" style="width:3px;height:3px;top:45%;left:20%;"></div>
+        <div class="node-dot" style="width:4px;height:4px;top:65%;left:90%;"></div>
+        <div class="node-dot" style="width:5px;height:5px;top:8%;left:45%;"></div>
+        <div class="node-dot" style="width:3px;height:3px;top:92%;left:25%;"></div>
+
+        <!-- Circuit-like lines -->
+        <div class="node-line" style="top:28%;left:32%;width:80px;transform:rotate(25deg);"></div>
+        <div class="node-line" style="top:58%;left:78%;width:60px;transform:rotate(-15deg);"></div>
+        <div class="node-line" style="top:35%;left:82%;width:100px;transform:rotate(45deg);"></div>
+        <div class="node-line" style="top:72%;left:18%;width:70px;transform:rotate(-30deg);"></div>
+        <div class="node-line" style="top:12%;left:58%;width:90px;transform:rotate(10deg);"></div>
+    </div>
+
+    <!-- ===== MAIN CONTENT ===== -->
+    <div class="relative z-10 w-full max-w-[1400px] mx-auto">
+
+        <div class="flex flex-col lg:flex-row items-center gap-8 lg:gap-16 xl:gap-20">
+
+            <!-- ===== LEFT: HERO ===== -->
+            <div class="w-full lg:w-1/2 space-y-6 lg:space-y-8 fade-in-up">
+
+                <!-- Brand -->
+                <div>
+                    <h1 class="brand-title text-4xl sm:text-5xl lg:text-[56px] font-extrabold tracking-tight text-[#0f2b1a] leading-[1.1]">
+                        Smart<span class="text-[#22c55e]">Energy</span>
+                    </h1>
+                    <p class="brand-sub mt-3 text-[#16a34a] text-base sm:text-lg font-medium opacity-90">
+                        Sri Lanka • Intelligent Energy Management System
+                    </p>
+                    <p class="mt-3 text-[#2d4a3a] text-sm sm:text-base max-w-md leading-relaxed opacity-80">
+                        Real‑time monitoring, AI‑driven analytics, and smart grid control for a sustainable future.
+                    </p>
+                </div>
+
+                <!-- Stats -->
+                <div class="hero-stats grid grid-cols-2 gap-4 max-w-lg">
+                    <!-- 99.9% -->
+                    <div class="stat-card">
+                        <div>
+                            <div class="number">99.9%</div>
+                            <div class="label">Grid Uptime</div>
+                        </div>
+                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                        </svg>
+                    </div>
+                    <!-- 12K+ -->
+                    <div class="stat-card">
+                        <div>
+                            <div class="number">12K+</div>
+                            <div class="label">Connected Devices</div>
+                        </div>
+                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4 7h16M4 12h16M4 17h10" />
+                            <circle cx="4" cy="7" r="1.5" fill="currentColor" stroke="none" />
+                            <circle cx="20" cy="7" r="1.5" fill="currentColor" stroke="none" />
+                            <circle cx="4" cy="12" r="1.5" fill="currentColor" stroke="none" />
+                            <circle cx="20" cy="12" r="1.5" fill="currentColor" stroke="none" />
+                            <circle cx="4" cy="17" r="1.5" fill="currentColor" stroke="none" />
+                            <circle cx="14" cy="17" r="1.5" fill="currentColor" stroke="none" />
+                        </svg>
+                    </div>
+                    <!-- 24/7 -->
+                    <div class="stat-card">
+                        <div>
+                            <div class="number">24/7</div>
+                            <div class="label">Monitoring</div>
+                        </div>
+                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                            <circle cx="12" cy="12" r="9" />
+                            <polyline points="12 7 12 12 15 15" />
+                        </svg>
+                    </div>
+                    <!-- 220kV -->
+                    <div class="stat-card">
+                        <div>
+                            <div class="number">220kV</div>
+                            <div class="label">Transmission</div>
+                        </div>
+                        <svg class="icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== RIGHT: AUTH CARD ===== -->
+            <div class="w-full lg:w-1/2 max-w-[440px] fade-in-up-delay">
+
+                <div class="auth-card p-6 sm:p-8">
+
+                    <!-- Tabs -->
+                    <div class="flex bg-[rgba(34,197,94,0.04)] rounded-2xl p-1.5 mb-7 border border-[rgba(34,197,94,0.06)]">
+                        <button id="loginTab" class="tab-btn active" onclick="switchToLogin()">
+                            Sign In
+                        </button>
+                        <button id="registerTab" class="tab-btn" onclick="switchToRegister()">
+                            Create Account
+                        </button>
+                    </div>
+
+                    <!-- ===== LOGIN FORM ===== -->
+                    <div id="loginForm" class="space-y-5">
+
+                        <!-- Email -->
+                        <div>
+                            <label class="block text-[15px] font-semibold text-[#2d4a3a]  tracking-wider mb-1.5">Email</label>
+                            <div class="relative">
+                                <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                <input type="email" class="input-field" placeholder="you@example.com" />
+                            </div>
+                        </div>
+
+                        <!-- Password -->
+                        <div>
+                            <label class="block text-[15px] font-semibold text-[#2d4a3a]  tracking-wider mb-1.5">Password</label>
+                            <div class="relative">
+                                <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                <input type="password" id="loginPassword" class="input-field" placeholder="••••••••" />
+                                <button type="button" onclick="togglePassword('loginPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-[#22c55e] hover:text-[#16a34a] transition-colors">
+                                    <svg class="w-5 h-5 eye-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Remember & Forgot -->
+                        <div class="flex items-center justify-between pt-1">
+                            <label class="flex items-center gap-2 cursor-pointer group">
+                                <input type="checkbox" class="w-4 h-4 rounded border-[#22c55e] bg-transparent checked:bg-[#22c55e] checked:border-[#22c55e] accent-[#22c55e]" />
+                                <span class="text-xs text-[#2d4a3a] group-hover:text-[#0f2b1a] transition-colors">Remember me</span>
+                            </label>
+                            <a href="#" class="text-xs text-[#22c55e] hover:text-[#16a34a] font-medium transition-colors">Forgot password?</a>
+                        </div>
+
+                        <!-- Sign In Button -->
+                        <button class="btn-primary" onclick="signinProcess();">
+                            Sign In
+                            <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+                            </svg>
+                        </button>
+
+                        <!-- Divider -->
+                        <div class="flex items-center gap-4 my-2">
+                            <div class="flex-1 h-px bg-[rgba(34,197,94,0.12)]"></div>
+                            <span class="text-xs text-[#2d4a3a] font-medium">OR</span>
+                            <div class="flex-1 h-px bg-[rgba(34,197,94,0.12)]"></div>
+                        </div>
+
+                        <!-- Social -->
+                        <div class="flex gap-3">
+                            <button class="btn-social">
+                                <svg class="w-4 h-4" viewBox="0 0 24 24">
+                                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4" />
+                                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
+                                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05" />
+                                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335" />
+                                </svg>
+                                Google
+                            </button>
+                            <button class="btn-social">
+                                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                    <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+                                </svg>
+                                GitHub
+                            </button>
+                        </div>
+
+                        <!-- Footer -->
+                        <p class="text-center text-xs text-[#2d4a3a] mt-4">
+                            Don’t have an account? <button onclick="switchToRegister()" class="text-[#22c55e] hover:text-[#16a34a] font-medium transition-colors">Create one</button>
+                        </p>
+                    </div>
+
+                    <!-- ===== REGISTER FORM ===== -->
+                    <div id="registerForm" class="space-y-5 hidden">
+
+                        <!-- Full Name -->
+                        <div>
+                            <label class="block text-[15px] font-semibold text-[#2d4a3a]  tracking-wider mb-1.5">Name</label>
+                            <div class="relative">
+                                <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                                <input type="text"  class="input-field" placeholder="John Doe" />
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-[15px] font-semibold text-[#2d4a3a]  tracking-wider mb-1.5">Meter ID</label>
+                            <div class="relative">
+   <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+    <path stroke-linecap="round" stroke-linejoin="round"
+        d="M13 2L3 14h7l-1 8 10-12h-7l1-8z" />
+</svg>
+                                <input type="text" id="mid" class="input-field" placeholder="AB-2132" />
+                            </div>
+                        </div>
+
+                        <!-- Email -->
+                        <div>
+                            <label class="block text-[15px] font-semibold text-[#2d4a3a] tracking-wider mb-1.5">Email</label>
+                            <div class="relative">
+                                <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                </svg>
+                                <input type="email" class="input-field" placeholder="you@example.com" />
+                            </div>
+                        </div>
+
+                        <!-- Password -->
+                        <div>
+                            <label class="block text-[15px] font-semibold text-[#2d4a3a]  tracking-wider mb-1.5">Password</label>
+                            <div class="relative">
+                                <svg class="input-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                                <input type="password" id="registerPassword" class="input-field" placeholder="••••••••" />
+                                <button type="button" onclick="togglePassword('registerPassword', this)" class="absolute right-4 top-1/2 -translate-y-1/2 text-[#22c55e] hover:text-[#16a34a] transition-colors">
+                                    <svg class="w-5 h-5 eye-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.8">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Terms -->
+                        <div class="flex items-start gap-2.5 pt-1">
+                            <input type="checkbox" class="w-4 h-4 mt-0.5 rounded border-[#22c55e] bg-transparent checked:bg-[#22c55e] checked:border-[#22c55e] accent-[#22c55e]" />
+                            <span class="text-xs text-[#2d4a3a] leading-snug">
+                                I agree to the <a href="#" class="text-[#22c55e] hover:text-[#16a34a] transition-colors">Terms</a> and <a href="#" class="text-[#22c55e] hover:text-[#16a34a] transition-colors">Privacy Policy</a>
+                            </span>
+                        </div>
+
+                        <!-- Create Account Button -->
+                        <button class="btn-primary" onclick="signupProcess();">
+                            Create Account
+                            <svg class="w-4 h-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                            </svg>
+                        </button>
+
+                        <!-- Footer -->
+                        <p class="text-center text-xs text-[#2d4a3a] mt-4">
+                            Already have an account? <button onclick="switchToLogin()" class="text-[#22c55e] hover:text-[#16a34a] font-medium transition-colors">Sign In</button>
+                        </p>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Footer -->
+        <footer class="relative z-10 text-center text-xs text-[#2d4a3a] mt-10 pb-2 opacity-60">
+            © 2026 SmartEnergy Sri Lanka. All rights reserved.
+        </footer>
+
+    </div>
+
+    <!-- ===== SCRIPTS ===== -->
+    <script>
+        // ---------- TAB SWITCHING ----------
+        const loginTab = document.getElementById('loginTab');
+        const registerTab = document.getElementById('registerTab');
+        const loginForm = document.getElementById('loginForm');
+        const registerForm = document.getElementById('registerForm');
+
+        function switchToLogin() {
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+            loginTab.classList.add('active');
+            registerTab.classList.remove('active');
+        }
+
+        function switchToRegister() {
+            loginForm.classList.add('hidden');
+            registerForm.classList.remove('hidden');
+            registerTab.classList.add('active');
+            loginTab.classList.remove('active');
+        }
+
+        // ---------- PASSWORD TOGGLE ----------
+        function togglePassword(inputId, btn) {
+            const input = document.getElementById(inputId);
+            const eye = btn.querySelector('.eye-icon');
+            if (input.type === 'password') {
+                input.type = 'text';
+                eye.innerHTML = `
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.542-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M15 12a3 3 0 01-3 3m0 0l6.365-6.365M12 9a3 3 0 00-3 3m0 0l-6.365 6.365" />
+                    `;
+            } else {
+                input.type = 'password';
+                eye.innerHTML = `
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    `;
+            }
+        }
+
+        // ---------- RIPPLE EFFECT ON BUTTONS ----------
+        document.querySelectorAll('.btn-primary, .btn-social, .tab-btn').forEach(btn => {
+            btn.addEventListener('click', function(e) {
+                if (this.classList.contains('tab-btn')) return;
+                const ripple = document.createElement('span');
+                const rect = this.getBoundingClientRect();
+                const size = Math.max(rect.width, rect.height);
+                ripple.style.cssText = `
+                        position: absolute; width: ${size}px; height: ${size}px;
+                        left: ${e.clientX - rect.left - size/2}px; top: ${e.clientY - rect.top - size/2}px;
+                        border-radius: 50%; background: rgba(34,197,94,0.15);
+                        transform: scale(0); animation: rippleEffect 0.6s ease-out forwards;
+                        pointer-events: none; z-index: 0;
+                    `;
+                this.style.position = 'relative';
+                this.style.overflow = 'hidden';
+                this.appendChild(ripple);
+                setTimeout(() => ripple.remove(), 600);
+            });
+        });
+
+        // Inject ripple keyframe
+        const styleSheet = document.createElement('style');
+        styleSheet.textContent = `
+                @keyframes rippleEffect {
+                    to { transform: scale(4); opacity: 0; }
+                }
+            `;
+        document.head.appendChild(styleSheet);
+    </script>
+
+    <script src="script.js"></script>
+
+</body>
+</html>
